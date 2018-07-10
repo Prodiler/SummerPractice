@@ -68,6 +68,7 @@ public class DrawPanel extends JPanel {
 
     boolean isAdded = false;
 
+
     public DrawPanel(TextLinePanel textLinePanel) {
         setBackground(Color.WHITE);
         addMouseListener(new MouseAdapter() {
@@ -249,6 +250,18 @@ public class DrawPanel extends JPanel {
         });
     }
 
+
+    public void clearAll() {
+        vertices.clear();
+        connections.clear();
+        edgesList.clear();
+        startNode = "";
+        goalNode = "";
+        isSelected = false;
+        isAdded = false;
+        inputHeuristic = false;
+        repaint();
+    }
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);

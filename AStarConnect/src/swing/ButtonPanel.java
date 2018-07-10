@@ -21,7 +21,8 @@ public class ButtonPanel extends JPanel implements ActionListener
 
     public final JButton startButton = createButton("Start", 10, 50);
     public final JButton stepButton = createButton("Step", 170, 50);
-    public final JButton fileButton = createButton("Upload from file", 90, 15);
+    public final JButton fileButton = createButton("Upload from file", 10, 15);
+    public final JButton restartButton = createButton("Restart", 170, 15);
 
     public static boolean isGraphicGH = true;
     public static boolean isFileGH = true;
@@ -29,10 +30,11 @@ public class ButtonPanel extends JPanel implements ActionListener
 
     private AppLauncher appLauncher = null;
 
+    AStar<String> astar = new AStar<>();
     private  Graph<String> graph;
     private String resultPath = "";
     private File file = null;
-
+    int a = 0; int b = 0;
     int line = 0;
 
     public ButtonPanel(AppLauncher appLauncher) {
@@ -43,10 +45,11 @@ public class ButtonPanel extends JPanel implements ActionListener
         startButton.addActionListener(this);
         stepButton.addActionListener(this);
         fileButton.addActionListener(this);
-
+        restartButton.addActionListener(this);
         add(startButton);
         add(stepButton);
         add(fileButton);
+        add(restartButton);
     }
 
     private JButton createButton(String text, int x, int y) {
@@ -71,11 +74,17 @@ public class ButtonPanel extends JPanel implements ActionListener
         stepButton.addMouseListener(listener);
     }
 
+    public void addRestartListener(MouseListener listener) {
+        restartButton.addMouseListener(listener);
+    }
+
 
     public void actionPerformed(ActionEvent ae)
     {
+
         if (ae.getSource().equals(startButton))
         {
+            a = 0; b = 0;
             if(isFile){
             if (!(file == null))
             {
@@ -123,8 +132,147 @@ public class ButtonPanel extends JPanel implements ActionListener
         {
             if(isFile) {
                 if (!(file == null)) {
-                    readFileAndStartAlgorithm();
 
+                    if(a == 0)
+                    {
+                        Scanner scanner = null;
+                        try {
+                            scanner = new Scanner(file);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+
+                        List<Graph.Edge<String>> edges = new ArrayList<>();
+                        Set<Graph.Vertex<String>> vertices = new HashSet<>();
+
+                        String start = scanner.next();
+                        String goal  = scanner.next();
+
+                        while(!scanner.hasNext("heuristic:")){
+                            String from = scanner.next();
+                            String to = scanner.next();
+                            int weight = scanner.nextInt();
+                            Graph.Vertex<String> v1 = new Graph.Vertex(from);
+                            Graph.Vertex<String> v2 = new Graph.Vertex(to);
+                            edges.add(new Graph.Edge<>(weight,v1,v2));
+                            if (!vertices.contains(v1)){
+                                vertices.add(v1);
+                            }
+
+                            if (!vertices.contains(v2)){
+                                vertices.add(v2);
+                            }
+                        }
+                        for (Graph.Vertex<String> v: vertices){
+                            for(Graph.Edge<String> e: edges){
+                                if(v.getValue().equals(e.getFromVertex().getValue())){
+                                    if(!v.getEdges().contains(e))v.addEdge(e);
+                                }
+                            }
+                        }
+                        for (Graph.Edge<String> e: edges){
+                            for (Graph.Vertex<String> v: vertices){
+                                if(e.getToVertex().getValue().equals(v.getValue())){
+                                    if(!e.getToVertex().equals(v)) e.setTo(v);
+                                }
+                                if(e.getFromVertex().getValue().equals(v.getValue())){
+                                    if(!e.getFromVertex().equals(v)) e.setFrom(v);
+                                }
+                            }
+                        }
+
+                        graph = new Graph<>(vertices,edges);
+                        resultPath = "";
+
+
+                        List<Graph.Edge<String>> path = new ArrayList<>();
+
+                        if (!isFileGH){
+                            Map<String,Integer> hScore = new HashMap<>();
+                            String value;
+                            Integer heuristic;
+                            value = scanner.next();
+                            while(scanner.hasNext()){
+                                value = scanner.next();
+                                heuristic = scanner.nextInt();
+                                hScore.put(value,heuristic);
+                            }
+                            astar.setH(false);
+                            astar.sethScore(hScore);
+                        }else astar.setH(true);
+
+                        try {
+                            astar.aStar(graph,graph.findVertex(start),graph.findVertex(goal));
+                            graph.comments = "";
+                            path = astar.calculate(false);
+                            a++;
+                        }
+                        catch(NullPointerException e)
+                        {
+                            //System.out.println("File contains incorrect data!");
+                            JOptionPane.showMessageDialog(null, "File contains incorrect data");
+                            System.exit(1);
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        //if(path == null) {
+                        //    //System.out.println("Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                        //    JOptionPane.showMessageDialog(null, "Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                        //}
+                        if(path != null) {
+                            for (Graph.Edge<String> v : path) {
+                                if (v.getFromVertex().getValue().equals(start)) {
+                                    resultPath += start;
+                                    resultPath += v.getToVertex().getValue();
+                                    continue;
+                                }
+                                resultPath += v.getToVertex().getValue();
+                            }
+                        }
+                    }
+
+                    else {
+                        Scanner scanner = null;
+                        try {
+                            scanner = new Scanner(file);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+
+                        List<Graph.Edge<String>> edges = new ArrayList<>();
+                        Set<Graph.Vertex<String>> vertices = new HashSet<>();
+                        String start = scanner.next();
+                        String goal  = scanner.next();
+                        List<Graph.Edge<String>> path = new ArrayList<>();
+                        try{
+                            path = astar.calculate(false);
+                        }
+
+                        catch(NullPointerException e)
+                        {
+                            //System.out.println("File contains incorrect data!");
+                            JOptionPane.showMessageDialog(null, "File contains incorrect data");
+                            System.exit(1);
+
+                        }
+                    //if(path == null) {
+                    //    System.out.println("Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                    //    JOptionPane.showMessageDialog(null, "Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                    //}
+                        if(path != null)
+                        {
+                            for (Graph.Edge<String> v : path) {
+                                if (v.getFromVertex().getValue().equals(start)) {
+                                    resultPath += start;
+                                    resultPath += v.getToVertex().getValue();
+                                    continue;
+                                }
+                                resultPath += v.getToVertex().getValue();
+                            }
+                        }
+
+                    }
                     if (line == 0) {
                         AppLauncher.infoBlock.setText("");
                     }
@@ -149,7 +297,153 @@ public class ButtonPanel extends JPanel implements ActionListener
                 }
             }else{
                 resultPath = "";
-                readGraphicsandStartAlgorithm();
+                if (b == 0)
+                {
+                    List<Graph.Edge<String>> edges = DrawPanel.takeEdges();
+                    Set<Graph.Vertex<String>> vertices = DrawPanel.takeVertices();
+
+                    for (Graph.Vertex<String> v: vertices){
+                        for(Graph.Edge<String> e: edges){
+                            if(v.getValue().equals(e.getFromVertex().getValue())){
+                                if(!v.getEdges().contains(e))v.addEdge(e);
+                            }
+                        }
+                    }
+                    for (Graph.Edge<String> e: edges){
+                        for (Graph.Vertex<String> v: vertices){
+                            if(e.getToVertex().getValue().equals(v.getValue())){
+                                if(!e.getToVertex().equals(v)) e.setTo(v);
+                            }
+                            if(e.getFromVertex().getValue().equals(v.getValue())){
+                                if(!e.getFromVertex().equals(v)) e.setFrom(v);
+                            }
+                        }
+                    }
+                    graph = new Graph<>(vertices,edges);
+                    AStar<String> astar = new AStar<>();
+                    List<Graph.Edge<String>> path = new ArrayList<>();
+                    String start = DrawPanel.getStartNode();
+                    String goal = DrawPanel.getGoalNode();
+
+// TODO
+                    AppLauncher.graph.clear();
+
+                    AppLauncher.graph.addAttribute("ui.label");
+                    AppLauncher.graph.addAttribute("ui.stylesheet",
+                            "graph{ fill-color: white; } " +
+                                    "node{ size: 30px, 30px;" +
+                                    "fill-color: gray;" +
+                                    "text-size: 24px;" +
+                                    "text-color: black;" +
+                                    "text-style: bold;" +
+                                    "shape: circle;" +
+                                    "size-mode: fit; }" +
+                                    "edge{ text-size: 24px;" +
+                                    "text-color: black;" +
+                                    "text-style: bold; }");
+                    AppLauncher.graph = graph.getVisualization();
+                    AppLauncher.viewer = AppLauncher.graph.display();
+                    AppLauncher.viewer.enableAutoLayout();
+                    AppLauncher.view = AppLauncher.viewer.addDefaultView(false);
+                    AppLauncher.view.setBorder(new TitledBorder("Graph Image"));
+                    AppLauncher.leftPanel.removeAll();
+                    AppLauncher.leftPanel.add(Box.createRigidArea(new Dimension(500, 10)));
+                    AppLauncher.leftPanel.add(AppLauncher.view);
+                    AppLauncher.leftPanel.add(Box.createRigidArea(new Dimension(500, 10)));
+                    AppLauncher.leftPanel.add(Box.createRigidArea(new Dimension(500, 40)));
+                    AppLauncher.leftPanel.updateUI();
+
+
+                    if(isGraphicGH){
+                        astar.setH(true);
+                        DrawPanel.setInputHeuristic(false);
+                    }
+                    else {
+                        Map<String,Integer> hScore = DrawPanel.takeHScore();
+                        DrawPanel.setInputHeuristic(true);
+                        astar.setH(false);
+                        astar.sethScore(hScore);
+                    }
+                    try {
+                        astar.aStar(graph,graph.findVertex(start),graph.findVertex(goal));
+                        graph.comments = "";
+                        path = astar.calculate(false);
+                        b++;
+                    }
+                    catch(NullPointerException e)
+                    {
+                        // System.out.println("File contains incorrect data!");
+                        JOptionPane.showMessageDialog(null, "File contains incorrect data");
+                        System.exit(1);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    //if(path == null) {
+                    //    //System.out.println("Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                    //    JOptionPane.showMessageDialog(null, "Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                    //}
+                    if(path != null) {
+                        for (Graph.Edge<String> v : path) {
+                            if (v.getFromVertex().getValue().equals(start)) {
+                                resultPath += start;
+                                resultPath += v.getToVertex().getValue();
+                                continue;
+                            }
+                            resultPath += v.getToVertex().getValue();
+                        }
+                    }
+                }
+                else {
+                    List<Graph.Edge<String>> edges = DrawPanel.takeEdges();
+                    Set<Graph.Vertex<String>> vertices = DrawPanel.takeVertices();
+
+                    for (Graph.Vertex<String> v: vertices){
+                        for(Graph.Edge<String> e: edges){
+                            if(v.getValue().equals(e.getFromVertex().getValue())){
+                                if(!v.getEdges().contains(e))v.addEdge(e);
+                            }
+                        }
+                    }
+                    for (Graph.Edge<String> e: edges){
+                        for (Graph.Vertex<String> v: vertices){
+                            if(e.getToVertex().getValue().equals(v.getValue())){
+                                if(!e.getToVertex().equals(v)) e.setTo(v);
+                            }
+                            if(e.getFromVertex().getValue().equals(v.getValue())){
+                                if(!e.getFromVertex().equals(v)) e.setFrom(v);
+                            }
+                        }
+                    }
+                    graph = new Graph<>(vertices,edges);
+                    AStar<String> astar = new AStar<>();
+                    List<Graph.Edge<String>> path = new ArrayList<>();
+                    String start = DrawPanel.getStartNode();
+                    String goal = DrawPanel.getGoalNode();
+                    try {
+                        path = astar.calculate(false);
+                    }
+                    catch(NullPointerException e)
+                    {
+                        // System.out.println("File contains incorrect data!");
+                        JOptionPane.showMessageDialog(null, "File contains incorrect data");
+                        System.exit(1);
+                    }
+                    //if(path == null) {
+                    //    //System.out.println("Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                    //    JOptionPane.showMessageDialog(null, "Path from <"+ start + "> to <" + goal + "> doesn't exist");
+                    //}
+                    if (path != null) {
+                        for (Graph.Edge<String> v : path) {
+                            if (v.getFromVertex().getValue().equals(start)) {
+                                resultPath += start;
+                                resultPath += v.getToVertex().getValue();
+                                continue;
+                            }
+                            resultPath += v.getToVertex().getValue();
+                        }
+                    }
+                }
+
 
                 if (line == 0) {
                     AppLauncher.infoBlock.setText("");
@@ -173,7 +467,7 @@ public class ButtonPanel extends JPanel implements ActionListener
         }
         else if (ae.getSource().equals(fileButton))
         {
-
+            a = 0; b = 0;
             AppLauncher.viewer.disableAutoLayout();
             isFile = true;
             ActionListener buttonlistener =  new ActionListener() {
@@ -265,6 +559,12 @@ public class ButtonPanel extends JPanel implements ActionListener
             };
             RadioButtonJFrame rad = new RadioButtonJFrame(buttonlistener,h1listener,h2listener);
             rad.setVisible(true);
+        }
+        else if (ae.getSource().equals(restartButton)) {
+            appLauncher.drawPanel.clearAll();
+            appLauncher.clearInfoBlock();
+            appLauncher.getContentPane().removeAll();
+            appLauncher.initRootPanel();
         }
 
     }
@@ -464,3 +764,4 @@ public class ButtonPanel extends JPanel implements ActionListener
     }
 
 }
+

@@ -19,7 +19,8 @@ import javax.swing.border.TitledBorder;
 
 public class AppLauncher extends JFrame
 {
-    private final JPanel rightPanel;
+    private static  JPanel rightPanel;
+    public static DrawPanel drawPanel;
     public static JPanel leftPanel;
     public static JTextArea infoBlock = new JTextArea(25, 30);
     private String result;
@@ -30,9 +31,11 @@ public class AppLauncher extends JFrame
     public static Viewer viewer;
     public static ViewPanel view;
 
-    private AppLauncher()
-    {
-        super("A-star algorithm");
+    public void clearInfoBlock() {
+        infoBlock.setText("");
+    }
+
+    public void initRootPanel() {
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setPreferredSize(new Dimension(900, 600));
@@ -49,7 +52,7 @@ public class AppLauncher extends JFrame
         leftPanel.setPreferredSize(new Dimension(500, 620));
         leftPanel.add(Box.createRigidArea(new Dimension(500, 10)));
         TextLinePanel textLinePanel = new TextLinePanel();
-        DrawPanel drawPanel = new DrawPanel(textLinePanel);
+        drawPanel = new DrawPanel(textLinePanel);
         drawPanel.setPreferredSize(new Dimension(500, 620));
         leftPanel.add(drawPanel);
         leftPanel.add(Box.createRigidArea(new Dimension(500, 10)));
@@ -61,7 +64,7 @@ public class AppLauncher extends JFrame
         buttonPanel.setBounds(550, 0, 310, 110);
 
         //RButtonPanel rbuttonPanel = new RButtonPanel();
-       // rbuttonPanel.setPreferredSize(new Dimension(10, 20));
+        // rbuttonPanel.setPreferredSize(new Dimension(10, 20));
 
         infoBlock.setBounds(0, 170, 310, 20);
         infoBlock.setEnabled(false);
@@ -106,7 +109,7 @@ public class AppLauncher extends JFrame
         view = viewer.addDefaultView(false);
         view.setBorder(new TitledBorder("Graph Image"));
 
-       // leftPanel.add(view);
+        // leftPanel.add(view);
 
         //инициализируем основную панель
         Container container = getContentPane();
@@ -122,6 +125,12 @@ public class AppLauncher extends JFrame
 
         pack();
         setLocationRelativeTo(null);
+    }
+
+    private AppLauncher()
+    {
+        super("A-star algorithm");
+        initRootPanel();
         setVisible(true);
     }
 
@@ -136,3 +145,4 @@ public class AppLauncher extends JFrame
     }
 
 }
+
