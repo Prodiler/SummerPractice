@@ -36,17 +36,17 @@ public class AStar<T> {
      * @return
      *          List of Edges to get from start to end or NULL if no path exists.
      */
-
     private Graph<T> graph;
-    private Graph.Vertex<T> start;
-    private Graph.Vertex<T> goal;
+    private Vertex<T> start;
+    private Vertex<T> goal;
 
     private int size;
-    private Set<Graph.Vertex<T>> closedSet;
-    private List<Graph.Vertex<T>> openSet;
-    private  Map<Graph.Vertex<T>,Graph.Vertex<T>> cameFrom;
-    private Map<Graph.Vertex<T>,Integer> gScore;
-    private Map<Graph.Vertex<T>,Integer> fScore;
+    private Set<Vertex<T>> closedSet;
+    private List<Vertex<T>> openSet;
+    private  Map<Vertex<T>,Vertex<T>> cameFrom;
+    private Map<Vertex<T>,Integer> gScore;
+    private Map<Vertex<T>,Integer> fScore;
+
 
     public void sethScore(Map<String, Integer> hScore) {
         this.hScore = hScore;
@@ -55,7 +55,7 @@ public class AStar<T> {
     private Map<String,Integer> hScore;
 
 
-    private Comparator<Graph.Vertex<T>> comparator = new Comparator<>() {
+    private Comparator<Vertex<T>> comparator = new Comparator<>() {
         @Override
         public int compare(Vertex<T> o1, Vertex<T> o2) {
             if (fScore.get(o1) < fScore.get(o2))
@@ -66,7 +66,7 @@ public class AStar<T> {
         }
     };
 
-    public List<Graph.Edge<T>> aStar(Graph<T> graph, Graph.Vertex<T> start, Graph.Vertex<T> goal) throws IOException {
+    public List<Edge<T>> aStar(Graph<T> graph, Vertex<T> start, Vertex<T> goal) throws IOException {
         this.graph = graph;
         this.start = start;
         this.goal = goal;
@@ -82,7 +82,7 @@ public class AStar<T> {
 
         // Estimated total cost from start to goal through y.
         fScore = new HashMap<>();
-        for (Graph.Vertex<T> v : graph.getVertices())
+        for (Vertex<T> v : graph.getVertices())
             fScore.put(v, Integer.MAX_VALUE);
         fScore.put(start, heuristicCostEstimate(start,goal));
 
@@ -91,13 +91,13 @@ public class AStar<T> {
         return null;
     }
 
-    public List<Graph.Edge<T>> calculate(boolean full_work)
+    public List<Edge<T>> calculate(boolean full_work)
     {
         if (full_work)
         {
             graph.comments = "";
             while (!openSet.isEmpty()) {
-                List<Graph.Edge<T>> tc = step();
+                List<Edge<T>> tc = step();
 
                 if (!(tc == null))
                 {
@@ -108,21 +108,22 @@ public class AStar<T> {
         }
         else
         {
-            graph.comments = "";
+            //graph.comments = "";
 
             return step();
-        }
+         }
     }
 
-    public List<Graph.Edge<T>> step()
+    public List<Edge<T>> step()
     {
-        final Graph.Vertex<T> current = openSet.get(0);
+        final Vertex<T> current = openSet.get(0);
+        AppLauncher.graph.getNode(current.toString()).addAttribute("ui.style", "fill-color: blue;");
         if (current.equals(goal))
             return reconstructPath(cameFrom, goal);
         graph.comments += "Current vertex value: " + current + "\n";
 
         graph.comments += "List (vertex, f(x)): ";
-        for (Graph.Vertex<T> v : openSet) {
+        for (Vertex<T> v : openSet) {
             graph.comments += "(" + v.getValue() + "," + fScore.get(v).toString() + ")";
             // fileOut.append("(" + v.getValue()+ " , " + fScore.get(v).toString() + ")");
         }
@@ -139,12 +140,15 @@ public class AStar<T> {
         // fileOut.append("\n");
         openSet.remove(0);
         closedSet.add(current);
-        for (Graph.Edge<T> edge : current.getEdges()) {
-            final Graph.Vertex<T> neighbor = edge.getToVertex();
+        for (Edge<T> edge : current.getEdges()) {
+            final Vertex<T> neighbor = edge.getToVertex();
+            AppLauncher.graph.getNode(neighbor.toString()).addAttribute("ui.style", "fill-color: yellow;");
             if (closedSet.contains(neighbor))
                 continue; // Ignore the neighbor which is already evaluated.
 
             final int tenativeGScore = gScore.get(current) + distanceBetween(current, neighbor); // length of this path.
+            //AppLauncher.graph.getEdge(current.toString() + neighbor.toString() + current.getEdge(neighbor).getCost()).addAttribute("ui.style", "fill-color: yellow;");
+            //System.out.println(current.getEdge(neighbor));
             if (!openSet.contains(neighbor))
                 openSet.add(neighbor); // Discover a new node
             else if (tenativeGScore >= gScore.get(neighbor))
@@ -152,6 +156,17 @@ public class AStar<T> {
 
             // This path is the best until now. Record it!
             cameFrom.put(neighbor, current);
+           /* {
+                az3
+                        ab5
+                ad4
+                        dc8
+                de13
+                        be2
+                ef11
+            }*/
+            //System.out.println(current.toString() + neighbor.toString() + current.getEdge(neighbor).getCost());
+            //AppLauncher.graph.getEdge(current.toString() + neighbor.toString() + current.getEdge(neighbor).getCost()).addAttribute("ui.style", "fill-color: blue;");
             gScore.put(neighbor, tenativeGScore);
             final int estimatedFScore = gScore.get(neighbor) + heuristicCostEstimate(neighbor, goal);
             fScore.put(neighbor, estimatedFScore);
@@ -159,7 +174,7 @@ public class AStar<T> {
             // fScore has changed, re-sort the list
             Collections.sort(openSet, comparator);
         }
-
+        //System.out.println(starCount);
         return null;
     }
 
@@ -167,7 +182,7 @@ public class AStar<T> {
      * Default distance is the edge cost. If there is no edge between the start and next then
      * it returns Integer.MAX_VALUE;
      */
-    private int distanceBetween(Graph.Vertex<T> start, Graph.Vertex<T> next) {
+    private int distanceBetween(Vertex<T> start, Vertex<T> next) {
         for (Edge<T> e : start.getEdges()) {
             if (e.getToVertex().equals(next))
                 return e.getCost();
@@ -176,22 +191,24 @@ public class AStar<T> {
     }
 
 
-    private int heuristicCostEstimate(Graph.Vertex<T> start, Graph.Vertex<T> goal) {
+    private int heuristicCostEstimate(Vertex<T> start, Vertex<T> goal) {
         if(h) return Math.abs((int)start.getValue().toString().charAt(0) - (int)goal.getValue().toString().charAt(0));
         return hScore.get(start.getValue());//discrete
 
     }
-    /*public Map<Graph.Vertex<T>,Integer> setGScoreforGH(String start,String goal){
-        hScore = new HashMap<Graph.Vertex<T>,Integer>
-    }*/
-    private List<Graph.Edge<T>> reconstructPath(Map<Graph.Vertex<T>,Graph.Vertex<T>> cameFrom, Graph.Vertex<T> current) {
-        final List<Graph.Edge<T>> totalPath = new ArrayList<>();
+
+    private List<Edge<T>> reconstructPath(Map<Vertex<T>,Vertex<T>> cameFrom, Vertex<T> current) {
+        final List<Edge<T>> totalPath = new ArrayList<>();
+
+        for (Vertex<T> v : graph.getVertices())
+            AppLauncher.graph.getNode(v.toString()).addAttribute("ui.style", "fill-color: gray;");
+
 
         while (current != null) {
-            final Graph.Vertex<T> previous = current;
+            final Vertex<T> previous = current;
             current = cameFrom.get(current);
             if (current != null) {
-                final Graph.Edge<T> edge = current.getEdge(previous);
+                final Edge<T> edge = current.getEdge(previous);
                 AppLauncher.graph.getNode(current.toString()).addAttribute("ui.style", "fill-color: blue;");
                 AppLauncher.graph.getNode(previous.toString()).addAttribute("ui.style", "fill-color: blue;");
                 AppLauncher.graph.getEdge(current.toString() + previous.toString() + edge.getCost()).addAttribute("ui.style", "fill-color: blue;");
